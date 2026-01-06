@@ -1,0 +1,125 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+module Helpers
+  class Constants
+    def self.min_ios_version_supported
+      return '15.1'
+    end
+  end
+end
+
+platform :ios, '15.1'
+prepare_react_native_project!
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
+
+def configure_sdk_dependency(name, version)
+  ios_dir = File.dirname(__FILE__)
+  frameworks_dir = File.join(ios_dir, 'Frameworks')
+  
+  # Priority 1: Source Compilation Mode
+  build_source_env = name == 'RTCRoomEngine' ? 'BUILD_ENGINE_SOURCE' : 'BUILD_ATOMICX_CORE_SOURCE'
+  engine_source_path = ENV['ENGINE_SOURCE_PATH']
+  
+  if ENV[build_source_env] == 'true' && !engine_source_path.nil? && !engine_source_path.empty?
+    podspec_path = if name == 'RTCRoomEngine'
+                     File.join(engine_source_path, 'src', 'platform_adapter', 'ios', 'RTCRoomEngine.podspec')
+                   else
+                     File.join(engine_source_path, 'atomicx', 'swift', 'AtomicXCore', 'AtomicXCore.podspec')
+                   end
+    
+    if File.exist?(podspec_path)
+      Pod::UI.puts "✓ Using #{name} source code from: #{podspec_path}".green
+      pod name, :path => podspec_path
+      return
+    else
+      Pod::UI.puts "⚠ #{name} podspec not found at: #{podspec_path}, falling back to next mode".yellow
+    end
+  end
+  
+  # Priority 2: Local Framework Mode
+  xcframework_path = File.join(frameworks_dir, "#{name}.xcframework")
+  podspec_path = File.join(frameworks_dir, "#{name}.podspec")
+  
+  if File.exist?(xcframework_path) && File.exist?(podspec_path)
+    Pod::UI.puts "✓ Using local #{name} framework from: #{xcframework_path}".green
+    pod name, :path => podspec_path
+    return
+  end
+  
+  # Priority 3: CocoaPods Repository Mode (default)
+  Pod::UI.puts "✓ Using CocoaPods repository for #{name} (declared in podspec)".green
+  return
+end
+
+target 'TuikitAtomicXExample' do
+  config = use_native_modules!
+  
+  # Configure SDK dependencies with priority (declare before use_react_native!):
+  # 1. Source compilation (BUILD_ENGINE_SOURCE/BUILD_ATOMICX_CORE_SOURCE + ENGINE_SOURCE_PATH)
+  # 2. Local Frameworks (ios/Frameworks/)
+  # 3. CocoaPods repository (default)
+  # Note: These dependencies will be used by tuikit-atomic-x podspec
+  configure_sdk_dependency('RTCRoomEngine', '3.5.0')
+  configure_sdk_dependency('AtomicXCore', '3.5.0')
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  pod 'SVGAPlayer', '~> 2.5.0', :modular_headers => true
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+    )
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 15.1
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        end
+
+        if target.name.include?('SVGAPlayer') || target.name.include?('Protobuf')
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+
+          pch_path = File.expand_path(File.join(__dir__, 'SVGAPlayer.pch'))
+          if File.exist?(pch_path)
+            config.build_settings['GCC_PREFIX_HEADER'] = pch_path
+            config.build_settings['GCC_PRECOMPILE_PREFIX_HEADER'] = 'YES'
+          end
+
+          config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)']
+          config.build_settings['OTHER_CFLAGS'] << '-Wno-deprecated-declarations'
+          config.build_settings['OTHER_CFLAGS'] << '-Wno-error=deprecated-declarations'
+          config.build_settings['OTHER_CFLAGS'] << '-fmodules'
+
+          config.build_settings['OTHER_CPLUSPLUSFLAGS'] ||= ['$(inherited)']
+          config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-deprecated-declarations'
+          config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-error=deprecated-declarations'
+
+          config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+
+          config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+        end
+      end
+    end
+
+    installer.pods_project.build_configurations.each do |config|
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 15.1
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+      end
+    end
+  end
+end

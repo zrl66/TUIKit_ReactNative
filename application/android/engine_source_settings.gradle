@@ -1,0 +1,5 @@
+include ':room_engine'
+project(':room_engine').projectDir = new File("$engineSourcePath/src/platform_adapter/java")
+include ':atomicxcore'
+project(':atomicxcore').projectDir = new File("$engineSourcePath/atomicx/kotlin/atomicxcore")
+

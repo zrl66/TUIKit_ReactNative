@@ -1,0 +1,153 @@
+buildscript {
+  ext.getExtOrDefault = {name ->
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['TuikitAtomicX_' + name]
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "com.android.tools.build:gradle:8.7.2"
+    // noinspection DifferentKotlinGradleVersion
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
+  }
+}
+
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+apply plugin: "com.facebook.react"
+
+def getExtOrIntegerDefault(name) {
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["TuikitAtomicX_" + name]).toInteger()
+}
+
+android {
+  namespace "io.trtc.tuikit.atomicxcore.hybridapi"
+
+  compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion getExtOrIntegerDefault("minSdkVersion")
+    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+
+  lintOptions {
+    disable "GradleCompatible"
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+
+  sourceSets {
+    main {
+      java.srcDirs += [
+        "generated/java",
+        "generated/jni"
+      ]
+    }
+  }
+}
+
+configurations.all {
+  exclude group: 'com.tencent.liteav', module: 'LiteAVSDK_TRTC'
+}
+
+repositories {
+  mavenCentral()
+  google()
+  maven {
+    url "https://mirrors.tencent.com/nexus/repository/maven-public/"
+  }
+  maven {
+    url "https://jitpack.io"
+  }
+  // Support local AAR files (preferred for development)
+  flatDir {
+    dirs 'libs'
+  }
+}
+
+def kotlin_version = getExtOrDefault("kotlinVersion")
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
+
+  implementation "com.google.code.gson:gson:2.10.1"
+
+  // ConstraintLayout for LiveCoreView
+  implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+  
+  // SVGAPlayer for SVGA animations
+  implementation "com.github.yyued:SVGAPlayer-Android:2.6.1"
+
+  implementation("com.tencent.liteav:LiteAVSDK_Professional:12.9.0.19467")
+  implementation("com.tencent.imsdk:imsdk-plus:8.7.7207")
+  implementation("io.trtc.uikit:common:3.5.0.1332")
+  
+  // Check if source compilation is enabled (same logic as old project app/build.gradle)
+  def useSourceCode = project.hasProperty('buildEngineSource') && buildEngineSource.toBoolean() || 
+                      project.hasProperty('buildAtomicxCoreSource') && buildAtomicxCoreSource.toBoolean()
+  
+  def libsDir = file('libs')
+  def localAtomicxCoreAar = null
+  def localRtcRoomEngineAar = null
+  def hasLocalAars = false
+  
+  if (!useSourceCode && libsDir.exists() && libsDir.isDirectory()) {
+    def aarFiles = libsDir.listFiles()?.findAll { file ->
+      file.isFile() && file.name.endsWith('.aar')
+    }
+    
+    if (aarFiles != null) {
+      localAtomicxCoreAar = aarFiles.find { file ->
+        file.name.contains('atomicx-core')
+      }
+      localRtcRoomEngineAar = aarFiles.find { file ->
+        file.name.contains('rtc_room_engine')
+      }
+      hasLocalAars = localAtomicxCoreAar != null && localRtcRoomEngineAar != null
+    }
+  }
+  
+  if (useSourceCode && rootProject.ext.has('roomEngineSdk') && rootProject.ext.has('atomicxCoreSdk')) {
+    // Use source code compilation (same as old project)
+    if (project.hasProperty('buildEngineSource') && buildEngineSource.toBoolean()) {
+      api rootProject.ext.roomEngineSdk
+      println "Using engine source: ${rootProject.ext.roomEngineSdk}"
+    }
+    if (project.hasProperty('buildAtomicxCoreSource') && buildAtomicxCoreSource.toBoolean()) {
+      api rootProject.ext.atomicxCoreSdk
+      println "Using atomicx core source: ${rootProject.ext.atomicxCoreSdk}"
+    }
+  } else if (hasLocalAars) {
+    // Use local AAR files (same as old project)
+    def atomicxCoreName = localAtomicxCoreAar.name.replace('.aar', '')
+    def rtcRoomEngineName = localRtcRoomEngineAar.name.replace('.aar', '')
+    api(name: atomicxCoreName, ext: 'aar')
+    api(name: rtcRoomEngineName, ext: 'aar')
+    println "Added local dependencies: ${atomicxCoreName}, ${rtcRoomEngineName}"
+  } else {
+    // Use Maven dependencies (same as old project)
+    api("io.trtc.uikit:atomicx-core:3.6.1.66")
+    api("io.trtc.uikit:rtc_room_engine:3.6.1.65")
+  }
+}

@@ -1,0 +1,3 @@
+# Local Frameworks (don't commit .xcframework files)
+Frameworks/*.xcframework/
+Frameworks/**/*.xcframework
