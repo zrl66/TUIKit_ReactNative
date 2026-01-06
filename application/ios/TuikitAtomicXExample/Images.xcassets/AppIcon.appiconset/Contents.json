@@ -1,0 +1,62 @@
+{
+  "images": [
+    {
+      "filename": "app-launcher-Notification@2x.png",
+      "idiom": "iphone",
+      "scale": "2x",
+      "size": "20x20"
+    },
+    {
+      "filename": "app-launcher-Notification@3x.png",
+      "idiom": "iphone",
+      "scale": "3x",
+      "size": "20x20"
+    },
+    {
+      "filename": "app-launcher-Small@2x.png",
+      "idiom": "iphone",
+      "scale": "2x",
+      "size": "29x29"
+    },
+    {
+      "filename": "app-launcher-Small@3x.png",
+      "idiom": "iphone",
+      "scale": "3x",
+      "size": "29x29"
+    },
+    {
+      "filename": "app-launcher-Small-40@2x.png",
+      "idiom": "iphone",
+      "scale": "2x",
+      "size": "40x40"
+    },
+    {
+      "filename": "app-launcher-Small-40@3x.png",
+      "idiom": "iphone",
+      "scale": "3x",
+      "size": "40x40"
+    },
+    {
+      "filename": "app-launcher-60@2x.png",
+      "idiom": "iphone",
+      "scale": "2x",
+      "size": "60x60"
+    },
+    {
+      "filename": "app-launcher-60@3x.png",
+      "idiom": "iphone",
+      "scale": "3x",
+      "size": "60x60"
+    },
+    {
+      "filename": "app-launcher.png",
+      "idiom": "ios-marketing",
+      "scale": "1x",
+      "size": "1024x1024"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

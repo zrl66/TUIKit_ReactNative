@@ -1,0 +1,41 @@
+{
+    "name": "@trtc/uikit-live-state",
+    "version": "1.0.0",
+    "description": "React Native state management module for TUIRoom Live, providing native API integration",
+    "main": "index.ts",
+    "types": "index.ts",
+    "scripts": {
+        "lint": "eslint .",
+        "type-check": "tsc --noEmit"
+    },
+    "keywords": [
+        "react-native",
+        "state",
+        "native-bridge",
+        "tuilive",
+        "trtc"
+    ],
+    "author": "",
+    "license": "MIT",
+    "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-native": ">=0.70.0"
+    },
+    "devDependencies": {
+        "@types/react": "^18.0.0",
+        "@types/react-native": "^0.70.0",
+        "typescript": "^5.0.0"
+    },
+    "files": [
+        "**/*.ts",
+        "**/*.tsx",
+        "README.md"
+    ],
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "engines": {
+        "node": ">=20"
+    }
+}

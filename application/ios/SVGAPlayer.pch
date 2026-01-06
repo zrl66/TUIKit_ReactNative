@@ -1,0 +1,15 @@
+//
+//  SVGAPlayer Precompiled Header
+//  修复 OSAtomicCompareAndSwapPtrBarrier 编译错误
+//
+
+#ifndef SVGAPlayer_pch
+#define SVGAPlayer_pch
+
+#ifdef __OBJC__
+// 导入 Darwin.libkern.OSAtomic 模块以支持 OSAtomicCompareAndSwapPtrBarrier
+@import Darwin.libkern.OSAtomic;
+#endif
+
+#endif /* SVGAPlayer_pch */
+

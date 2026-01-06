@@ -1,0 +1,41 @@
+buildscript {
+    ext {
+        buildToolsVersion = "36.0.0"
+        minSdkVersion = 24
+        compileSdkVersion = 36
+        targetSdkVersion = 36
+        ndkVersion = "27.2.12479018"
+        kotlinVersion = "2.1.20"
+        dokka_version = '1.8.20'
+        roomEngineSdk = buildEngineSource.toBoolean() ? project(":room_engine") : "io.trtc.uikit:rtc_room_engine:3.6.1.65"
+        atomicxCoreSdk = buildAtomicxCoreSource.toBoolean() ? project(":atomicxcore") : "io.trtc.uikit:atomicx-core:3.6.1.66"
+    }
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath("org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version")
+    }
+}
+
+plugins {
+    id("org.jetbrains.dokka") version "1.8.20" apply false
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url "https://mirrors.tencent.com/nexus/repository/maven-public/"
+        }
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+apply plugin: "com.facebook.react.rootproject"
