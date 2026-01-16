@@ -31,6 +31,7 @@ import type { FetchLiveListOptions } from '../atomic-x/state/LiveListState/types
 import { useLoginState } from '../atomic-x/state/LoginState';
 import { useCoGuestState } from '../atomic-x/state/CoGuestState';
 import { ConfirmDialog } from './ConfirmDialog';
+import { ConnectionCode } from '../atomic-x/state/CoHostState/types';
 
 const { width: screenWidth } = Dimensions.get('window');
 const DEFAULT_AVATAR_URL = 'https://web.sdk.qcloud.com/component/TUIKit/assets/avatar_01.png';
@@ -196,13 +197,11 @@ export function CoHostPanel({
             onSuccess: () => {
                 console.log('连线成功');
             },
-            onError: (error: Error | string) => {
-                console.log('连线失败:', error);
-                const errorMessage = error instanceof Error ? error.message : String(error);
-
-                if (errorMessage.includes('5') || errorMessage.includes('连线中')) {
+            onError: (error: any) => {
+                if (error?.code === ConnectionCode.CONNECTING_OTHER_ROOM) {
                     showToast(t('coHost.hostBusy'), 3000);
-                } else {
+                }
+                else {
                     showToast(t('toast.operationFailed'), 3000);
                 }
             }

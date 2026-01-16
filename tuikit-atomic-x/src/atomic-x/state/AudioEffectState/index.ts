@@ -343,7 +343,6 @@ export function useAudioEffectState(liveID: string) {
             console.log(`[AudioEffectState] Added listener for: ${eventName}, eventName=${key}`);
         });
 
-        // 清理函数：组件卸载时移除所有监听器
         return () => {
             AUDIO_EFFECT_EVENTS.forEach((eventName) => {
                 const keyObject = createListenerKeyObject(eventName);

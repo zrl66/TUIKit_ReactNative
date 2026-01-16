@@ -262,7 +262,6 @@ export function useCoHostState(liveID: string) {
       console.log(`[CoHostState] Added listener for: ${eventName}, eventName=${key}`);
     });
 
-    // 清理函数：组件卸载时移除所有监听器
     return () => {
       CO_HOST_EVENTS.forEach((eventName) => {
         const keyObject = createListenerKeyObject(eventName);
@@ -299,6 +298,7 @@ export function useCoHostState(liveID: string) {
         onSuccess?.();
       } else {
         const error = new Error(result.error || 'Request host connection failed');
+        (error as any).code = result.code;
         onError?.(error);
       }
     } catch (error: any) {

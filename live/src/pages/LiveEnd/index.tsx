@@ -68,7 +68,6 @@ export function LiveEndPage({ onBack, liveID: _liveID, summaryData: propsSummary
             dataSource = 'global';
         }
 
-        console.log(`使用${dataSource}数据:`, sourceData);
 
         const convertedData: SummaryData = {
             totalDuration: sourceData.totalDuration || sourceData.duration || 0,

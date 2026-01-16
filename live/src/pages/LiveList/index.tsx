@@ -12,10 +12,11 @@ import { useTranslation, LiveList } from 'react-native-tuikit-atomic-x';
 export interface LiveListPageProps {
   onBack?: () => void;
   onJoinSuccess?: (liveID: string) => void;
+  onJoinAsAnchor?: (liveID: string) => void;
   onCreateLive?: () => void;
 }
 
-export function LiveListPage({ onBack, onJoinSuccess, onCreateLive }: LiveListPageProps) {
+export function LiveListPage({ onBack, onJoinSuccess, onJoinAsAnchor, onCreateLive }: LiveListPageProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const { t } = useTranslation();
 
@@ -49,7 +50,11 @@ export function LiveListPage({ onBack, onJoinSuccess, onCreateLive }: LiveListPa
       </View>
 
       <View style={styles.content}>
-        <LiveList onJoinSuccess={onJoinSuccess} handleTopSafeArea={false} />
+        <LiveList 
+          onJoinSuccess={onJoinSuccess} 
+          onJoinAsAnchor={onJoinAsAnchor}
+          handleTopSafeArea={false} 
+        />
       </View>
 
       <View style={styles.footer}>

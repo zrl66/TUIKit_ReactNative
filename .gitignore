@@ -6,12 +6,14 @@ application/android/build
 application/android/app/build
 application/android/app/.cxx
 application/android/.gradle
+application/android/.idea/
 application/ios/build
 application/ios/Pods
 application/ios/Podfile.lock
 tuikit-atomic-x/node_modules
 tuikit-atomic-x/android/build
 tuikit-atomic-x/android/.gradle
+tuikit-atomic-x/android/libs/
 live/node_modules
 yarn.lock
 .yarn

@@ -252,7 +252,6 @@ export function useCoGuestState(liveID: string) {
       console.log(`[CoGuestState] Added listener for: ${eventName}, eventName=${key}`);
     });
 
-    // 清理函数：组件卸载时移除所有监听器
     return () => {
       CO_GUEST_EVENTS.forEach((eventName) => {
         const keyObject = createListenerKeyObject(eventName);
