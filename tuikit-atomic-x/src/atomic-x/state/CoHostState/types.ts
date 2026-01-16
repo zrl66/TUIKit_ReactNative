@@ -24,6 +24,12 @@ export enum CoHostLayoutTemplate {
   HOST_DYNAMIC_1V6 = 601,
 }
 
+export enum ConnectionCode {
+  UNKNOWN = -1,
+  SUCCESS = 0,
+  CONNECTING_OTHER_ROOM = 3,
+}
+
 /**
  * 直播用户信息参数
  */

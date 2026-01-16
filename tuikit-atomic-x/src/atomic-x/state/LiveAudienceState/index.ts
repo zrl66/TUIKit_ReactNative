@@ -28,29 +28,6 @@ import { liveAudienceStore } from './store';
 type ILiveListener = (params?: unknown) => void;
 
 /**
- * 观众状态事件名称常量
- */
-const LIVE_AUDIENCE_EVENTS = [
-  'audienceList',
-  'audienceCount',
-];
-
-/**
- * 安全解析 JSON
- */
-function safeJsonParse<T>(json: string, defaultValue: T): T {
-  try {
-    if (!json || typeof json !== 'string') {
-      return defaultValue;
-    }
-    return JSON.parse(json) as T;
-  } catch (error) {
-    console.error('safeJsonParse error:', error);
-    return defaultValue;
-  }
-}
-
-/**
  * LiveAudienceState Hook
  * 
  * @param liveID - 直播间ID
@@ -88,8 +65,7 @@ export function useLiveAudienceState(liveID: string) {
   // 观众列表状态 - 使用全局 store 的初始值
   const [audienceList, setAudienceList] = useState<LiveUserInfoParam[]>(initialState.audienceList);
 
-  // 观众数量状态 - 使用全局 store 的初始值
-  const [audienceCount, setAudienceCount] = useState<number>(initialState.audienceCount);
+  const [audienceCount, setAudienceCount] = useState<number>(0);
 
   // 订阅全局 store 的状态变化
   useEffect(() => {
@@ -100,120 +76,15 @@ export function useLiveAudienceState(liveID: string) {
     // 订阅状态变化
     const unsubscribe = liveAudienceStore.subscribe(liveID, (state) => {
       setAudienceList(state.audienceList);
-      setAudienceCount(state.audienceCount);
+      const displayCount = state.audienceCount >= 100 
+        ? state.audienceCount 
+        : state.audienceList.length;
+      setAudienceCount(displayCount);
     });
 
     // 清理订阅
     return unsubscribe;
   }, [liveID]);
-
-  // 事件监听器引用
-  type WritableMap = Record<string, unknown>;
-
-  /**
-   * 处理观众状态变化事件
-   * 更新全局 store，store 会自动通知所有订阅者
-   */
-  const handleEvent = useCallback((eventName: string) => (event: WritableMap) => {
-    try {
-      // 如果 event 已经是对象，直接使用；否则尝试解析
-      const data = event && typeof event === 'object' && !Array.isArray(event)
-        ? event
-        : typeof event === 'string'
-          ? JSON.parse(event)
-          : event;
-
-      console.log(`[LiveAudienceState] ${eventName} event received:`, JSON.stringify(data));
-
-      // 检查 data 的 key 是否匹配 LIVE_AUDIENCE_EVENTS 中的某个值
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        const updates: { audienceList?: LiveUserInfoParam[]; audienceCount?: number } = {};
-
-        Object.keys(data).forEach((key) => {
-          if (LIVE_AUDIENCE_EVENTS.includes(key)) {
-            const value = data[key];
-
-            // 根据不同的 key 更新对应的响应式数据
-            if (key === 'audienceList') {
-              // audienceList 是数组类型
-              let parsedData: LiveUserInfoParam[];
-              if (Array.isArray(value)) {
-                // 如果已经是数组，直接使用
-                parsedData = value as LiveUserInfoParam[];
-              } else if (typeof value === 'string') {
-                // 如果是字符串，需要解析
-                parsedData = safeJsonParse<LiveUserInfoParam[]>(value, []);
-              } else {
-                // 其他情况，尝试 JSON 序列化后解析
-                parsedData = safeJsonParse<LiveUserInfoParam[]>(JSON.stringify(value), []);
-              }
-              updates.audienceList = parsedData;
-            } else if (key === 'audienceCount') {
-              // audienceCount 是数字类型
-              const parsedData = typeof value === 'number' ? value : (Number(value) || 0);
-              updates.audienceCount = parsedData;
-            }
-          }
-        });
-
-        // 批量更新全局 store（只更新一次，避免多次通知）
-        if (Object.keys(updates).length > 0) {
-          liveAudienceStore.setState(liveID, updates);
-        }
-      }
-    } catch (error) {
-      console.error(`[LiveAudienceState] ${eventName} event parse error:`, error);
-      console.log(`[LiveAudienceState] ${eventName} event received (raw):`, event);
-    }
-  }, [liveID]);
-
-  /**
-   * 绑定事件监听
-   */
-  useEffect(() => {
-    if (!liveID) {
-      return;
-    }
-
-    const createListenerKeyObject = (eventName: string, listenerID?: string | null): HybridListenerKey => {
-      return {
-        type: 'state',
-        store: 'LiveAudienceStore',
-        name: eventName,
-        roomID: liveID ?? null,
-        listenerID: listenerID ?? null,
-      };
-    };
-
-    // 保存监听器清理函数的引用
-    const cleanupFunctions: Array<{ remove: () => void }> = [];
-
-    LIVE_AUDIENCE_EVENTS.forEach((eventName) => {
-      const keyObject = createListenerKeyObject(eventName);
-      const key = JSON.stringify(keyObject);
-      console.log(key);
-      // addListener 会自动注册 Native 端和 JS 层的事件监听器
-      const subscription = addListener(key, handleEvent(eventName));
-      if (subscription) {
-        cleanupFunctions.push(subscription);
-      }
-
-      console.log(`[LiveAudienceState] Added listener for: ${eventName}, eventName=${key}`);
-    });
-
-    // 清理函数：组件卸载时移除所有监听器
-    return () => {
-      LIVE_AUDIENCE_EVENTS.forEach((eventName) => {
-        const keyObject = createListenerKeyObject(eventName);
-        const key = JSON.stringify(keyObject);
-        removeListener(key);
-      });
-      // 同时清理 JS 层的订阅
-      cleanupFunctions.forEach((cleanup) => {
-        cleanup.remove();
-      });
-    };
-  }, [handleEvent, liveID]);
 
   /**
    * 获取直播间观众列表
@@ -235,7 +106,6 @@ export function useLiveAudienceState(liveID: string) {
       const result = await callNativeAPI<LiveUserInfoParam[]>('fetchAudienceList', fetchParams);
 
       if (result.success) {
-        // 成功时只触发回调，状态更新由事件监听器处理
         onSuccess?.();
       } else {
         const error = new Error(result.error || 'Fetch audience list failed');

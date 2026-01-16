@@ -202,7 +202,6 @@ export function useBarrageState(liveID: string) {
       console.log(`[BarrageState] Added listener for: ${eventName}, eventName=${key}`);
     });
 
-    // 清理函数：组件卸载时移除所有监听器
     return () => {
       BARRAGE_EVENTS.forEach((eventName) => {
         const keyObject = createListenerKeyObject(eventName);

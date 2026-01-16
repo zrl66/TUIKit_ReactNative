@@ -61,6 +61,8 @@ import {
     MirrorType,
     startForegroundService,
     stopForegroundService,
+    useBaseBeautyState,
+    useAudioEffectState,
 } from 'react-native-tuikit-atomic-x';
 import type { LiveUserInfoParam } from 'react-native-tuikit-atomic-x';
 import { Dimensions } from 'react-native';
@@ -77,12 +79,12 @@ function getMuteImageByLanguage(language: string = 'en'): {
     big: number;
     small: number;
 } {
-    const bigImage = language.toLowerCase() === 'en' 
+    const bigImage = language.toLowerCase() === 'en'
         ? require('../../static/images/live_mute_image_en.png')
         : require('../../static/images/live_mute_image_zh.png');
-    
+
     const smallImage = require('../../static/images/live_mute_image_multi.png');
-    
+
     return {
         big: bigImage,
         small: smallImage,
@@ -120,7 +122,10 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
         global.currentLiveID = generatedLiveID;
         return generatedLiveID;
     });
-    const [isLiveStarted, setIsLiveStarted] = useState(false);
+    const [isLiveStarted, setIsLiveStarted] = useState<boolean>(() => {
+        const hasCurrentLive = !!(currentLive && currentLive.liveID);
+        return hasCurrentLive;
+    });
     const [isShowExitSheet, setIsShowExitSheet] = useState(false);
     const [isShowAudienceList, setIsShowAudienceList] = useState(false);
     const [isShowUserInfoPanel, setIsShowUserInfoPanel] = useState(false);
@@ -139,7 +144,17 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
     const [selectedAudienceFromBarrage, setSelectedAudienceFromBarrage] = useState<LiveUserInfoParam | null>(null);
     const [isShowLiveMoreActionsPanel, setIsShowLiveMoreActionsPanel] = useState(false);
     const [liveDurationText, setLiveDurationText] = useState('00:00:00');
-
+    const {
+        setSmoothLevel,
+        setWhitenessLevel,
+        setRuddyLevel,
+    } = useBaseBeautyState(liveID);
+    const {
+        setAudioChangerType,
+        setAudioReverbType,
+        setVoiceEarMonitorEnable,
+        setVoiceEarMonitorVolume,
+    } = useAudioEffectState(liveID);
     useEffect(() => {
         if (loginUserInfo?.userName && !liveTitle) {
             setLiveTitle(String(loginUserInfo.userName));
@@ -157,6 +172,19 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
         (global as any).currentLiveID = finalLiveID;
         return finalLiveID;
     }, [currentLive, liveID]);
+
+    useEffect(() => {
+        if (currentLive && currentLive.liveID) {
+            setIsLiveStarted(true);
+
+            if ((currentLive as any).liveName) {
+                setLiveTitle((currentLive as any).liveName);
+            }
+            if ((currentLive as any).coverURL) {
+                setCoverURL((currentLive as any).coverURL);
+            }
+        }
+    }, [currentLive]);
 
     const { seatList } = useLiveSeatState(actualLiveID);
 
@@ -224,15 +252,14 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
         }
     }, [applicants, isShowCoGuestPanelAvatar, actualLiveID, rejectApplication]);
 
-    useEffect(() => {
-        console.log('主播页面 summaryData 变化:', summaryData);
-    }, [summaryData]);
 
     useEffect(() => {
         if (coHostStatus === CoHostStatus.DISCONNECTED) {
             setIsShowCoGuestPanelAvatar(true);
         }
     }, [coHostStatus]);
+
+
 
     useEffect(() => {
         if (isLiveStarted && liveStreamViewRef.current) {
@@ -269,10 +296,6 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
     const showCoHostInviteDialog = React.useCallback((userInfo: any) => {
         setCurrentModalUserInfo(userInfo);
         setShowCoHostConfirmModal(true);
-        setTimeout(() => {
-            setShowCoHostConfirmModal(false);
-            setCurrentModalUserInfo(null);
-        }, 30000);
     }, []);
 
     useEffect(() => {
@@ -282,10 +305,11 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
             try {
                 const event = typeof params === 'string' ? params : JSON.stringify(params);
                 const res = JSON.parse(event);
+                const inviter = JSON.parse(res.inviter);
                 if (coGuestConnected.length > 1 || applicants.length > 0) {
                     rejectHostConnection({
                         liveID: actualLiveID,
-                        fromHostLiveID: JSON.parse(res.inviter).liveID,
+                        fromHostLiveID: inviter.liveID,
                         onSuccess: () => {
                             console.log('拒绝连主播请求');
                         },
@@ -299,7 +323,16 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
                 if (isShowCoGuestPanelAvatar && applicants.length === 0) {
                     setIsShowCoGuestPanelAvatar(false);
                 }
-                showCoHostInviteDialog(JSON.parse(res.inviter));
+                
+                if (isShowCoHostPanel || isShowCoGuestPanel) {
+                    setIsShowCoHostPanel(false);
+                    setIsShowCoGuestPanel(false);
+                    setTimeout(() => {
+                        showCoHostInviteDialog(inviter);
+                    }, 400);
+                } else {
+                    showCoHostInviteDialog(inviter);
+                }
             } catch (error) {
                 console.error('解析连主播请求事件失败:', error);
             }
@@ -316,14 +349,16 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
         const handleCoHostRequestTimeout = (params?: unknown) => {
             try {
                 setIsShowCoGuestPanelAvatar(true);
-                
+
                 const event = typeof params === 'string' ? JSON.parse(params) : params;
                 const invitee = typeof event?.invitee === 'string' ? JSON.parse(event.invitee) : event?.invitee;
-                
+
                 if (invitee?.userID === liveOwner?.userID) {
+                    setShowCoHostConfirmModal(false);
+                    setCurrentModalUserInfo(null);
                     return;
                 }
-                
+
                 showToast(t('anchor.coHostTimeout'), 2000);
             } catch (error) {
                 setIsShowCoGuestPanelAvatar(true);
@@ -341,7 +376,7 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
             removeCoHostListener('onCoHostRequestRejected', actualLiveID);
             removeCoHostListener('onCoHostRequestTimeout', actualLiveID);
         };
-    }, [isLiveStarted, actualLiveID, coGuestConnected, applicants, isShowCoGuestPanelAvatar, addCoHostListener, removeCoHostListener, rejectHostConnection, showCoHostInviteDialog]);
+    }, [isLiveStarted, actualLiveID, coGuestConnected, applicants, isShowCoGuestPanelAvatar, isShowCoHostPanel, isShowCoGuestPanel, addCoHostListener, removeCoHostListener, rejectHostConnection, showCoHostInviteDialog]);
 
     useEffect(() => {
         if (!isLiveStarted || !actualLiveID) return;
@@ -625,13 +660,6 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
 
             const finalSummaryData = {
                 ...summaryData,
-                duration: liveDurationMs,
-                totalDuration: liveDurationMs,
-                viewerCount: audienceCount || 0,
-                totalViewers: audienceCount || 0,
-                totalLikesReceived: summaryData?.totalLikesReceived || 0,
-                giftCount: summaryData?.giftCount || 0,
-                totalGiftCoins: summaryData?.giftCount || 0,
             };
 
             (global as any).summaryData = finalSummaryData;
@@ -640,6 +668,13 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
                 onSuccess: () => {
                     setIsLiveStarted(false);
                     stopForegroundService();
+                    setSmoothLevel({ smoothLevel: 0 });
+                    setRuddyLevel({ ruddyLevel: 0 });
+                    setWhitenessLevel({ whitenessLevel: 0 });
+                    setAudioChangerType({ changerType: 'NONE' })
+                    setAudioReverbType({ reverbType: 'NONE' })
+                    setVoiceEarMonitorEnable({ enable: false });
+                    setVoiceEarMonitorVolume({ volume: 100 })
                     onEndLive?.();
                 },
                 onError: (error) => {
@@ -761,6 +796,13 @@ export function AnchorPage({ onBack, onStartLiveSuccess, onEndLive }: AnchorPage
         try {
             await closeLocalCamera();
             await closeLocalMicrophone();
+            setSmoothLevel({ smoothLevel: 0 });
+            setRuddyLevel({ ruddyLevel: 0 });
+            setWhitenessLevel({ whitenessLevel: 0 });
+            setAudioChangerType({ changerType: 'NONE' })
+            setAudioReverbType({ reverbType: 'NONE' })
+            setVoiceEarMonitorEnable({ enable: false });
+            setVoiceEarMonitorVolume({ volume: 100 })
         } catch (error) {
             console.error('关闭摄像头/麦克风失败:', error);
         } finally {

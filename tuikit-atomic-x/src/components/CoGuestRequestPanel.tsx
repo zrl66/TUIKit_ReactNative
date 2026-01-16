@@ -18,6 +18,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCoGuestState } from '../atomic-x/state/CoGuestState';
+import { CuestErrorCode } from '../atomic-x/state/CoGuestState/types';
 import { showToast } from './CustomToast';
 
 interface CoGuestRequestPanelProps {
@@ -68,9 +69,7 @@ export function CoGuestRequestPanel({
     };
 
     const handleSendCoGuest = (type: string) => {
-        console.log('handleSendCoGuest', type, liveID, seatIndex);
 
-        // 立即将状态变更为 USER_APPLYING，并将上麦类型透出给父组件
         onStatusChange?.('USER_APPLYING', type as 'video' | 'mic');
         handleClose();
         showToast(t('coGuest.waitingForAnchor'), 2000);
@@ -81,8 +80,10 @@ export function CoGuestRequestPanel({
             onSuccess: () => {
                 console.log('你提交了连麦申请,请等待主播同意');
             },
-            onError: () => {
-                // 申请失败时重置状态为 IDLE，并把当前上麦类型回传
+            onError: (error: any) => {
+                if (error?.code === CuestErrorCode.NOT_SUPPORT) {
+                    showToast(t('coGuest.notSupportCoGuest'), 2000);
+                }
                 onStatusChange?.('IDLE', type as 'video' | 'mic');
             },
         });

@@ -199,7 +199,6 @@ export function useLoginState() {
       console.log(`[LoginState] Added listener for: ${eventName}, eventName=${key}`);
     });
 
-    // 清理函数：组件卸载时移除所有监听器
     return () => {
       LOGIN_EVENTS.forEach((eventName) => {
         const keyObject = createListenerKeyObject(eventName);

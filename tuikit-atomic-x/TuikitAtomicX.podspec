@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
   # Dependencies
   # Use >= 3.0.0 constraint to support source compilation mode (source podspec version may be 3.0.5 or other)
   # For Maven/CocoaPods repository mode, versions are typically >= 3.5.0
-  s.dependency "AtomicXCore", "3.6.0"
+  s.dependency "AtomicXCore", "3.6.2"
   s.dependency "RTCRoomEngine/Professional", "3.6.1"
   s.dependency "SVGAPlayer", "~> 2.5"
   s.dependency "TXLiteAVSDK_Professional", "13.0.20278"

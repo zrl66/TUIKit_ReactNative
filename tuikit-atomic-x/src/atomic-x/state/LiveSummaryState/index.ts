@@ -104,7 +104,6 @@ export function useLiveSummaryState(liveID: string) {
           ? JSON.parse(event)
           : event;
 
-      console.log(`[LiveSummaryState] ${eventName} event received:`, JSON.stringify(data));
 
       // 检查 data 的 key 是否匹配 LIVE_SUMMARY_EVENTS 中的某个值
       if (data && typeof data === 'object' && !Array.isArray(data)) {
@@ -172,7 +171,6 @@ export function useLiveSummaryState(liveID: string) {
       console.log(`[LiveSummaryState] Added listener for: ${eventName}, eventName=${key}`);
     });
 
-    // 清理函数：组件卸载时移除所有监听器
     return () => {
       LIVE_SUMMARY_EVENTS.forEach((eventName) => {
         const keyObject = createListenerKeyObject(eventName);

@@ -7,6 +7,8 @@ import android.net.Uri
 import android.util.Log
 import android.view.View
 import android.view.ViewOutlineProvider
+import com.facebook.react.uimanager.ThemedReactContext
+import com.facebook.react.views.imagehelper.ImageSource
 import com.facebook.common.references.CloseableReference
 import com.facebook.datasource.BaseDataSubscriber
 import com.facebook.datasource.DataSource
@@ -77,10 +79,13 @@ class ReactLiveCoreView(context: Context) : ReactFrameLayout(context) {
 
     private suspend fun loadBitmapFromUri(uri: String): Bitmap? = withContext(Dispatchers.IO) {
         return@withContext try {
+            val imageSource = ImageSource(context, uri)
+            Log.d(TAG, "loadBitmapFromUri: ImageSource created, uri=${imageSource.uri}, isResource=${imageSource.isResource}")
+
             val imageRequest = ImageRequestBuilder
-                .newBuilderWithSource(Uri.parse(uri))
+                .newBuilderWithSource(imageSource.uri)
                 .build()
-            
+
             val imagePipeline = Fresco.getImagePipeline()
             val dataSource = imagePipeline.fetchDecodedImage(imageRequest, context)
 
@@ -88,7 +93,7 @@ class ReactLiveCoreView(context: Context) : ReactFrameLayout(context) {
             dataSource.subscribe(object : BaseDataSubscriber<CloseableReference<CloseableImage>>() {
                 override fun onNewResultImpl(dataSource: DataSource<CloseableReference<CloseableImage>>) {
                     if (!dataSource.isFinished) return
-                    
+
                     val ref = dataSource.result
                     if (ref != null) {
                         try {
@@ -116,7 +121,7 @@ class ReactLiveCoreView(context: Context) : ReactFrameLayout(context) {
             }, CallerThreadExecutor.getInstance())
             deferred.await()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load Bitmap from URI: $uri", e)
+            Log.e(TAG, "loadBitmapFromUri: Exception occurred for URI: $uri", e)
             null
         }
     }

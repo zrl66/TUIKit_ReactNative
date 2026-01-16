@@ -200,7 +200,6 @@ export function useGiftState(liveID: string) {
       console.log(`[GiftState] Added listener for: ${eventName}, eventName=${key}`);
     });
 
-    // 清理函数：组件卸载时移除所有监听器
     return () => {
       GIFT_EVENTS.forEach((eventName) => {
         const keyObject = createListenerKeyObject(eventName);

@@ -40,6 +40,7 @@ function App() {
   const isDarkMode = useColorScheme() === 'dark';
   const [currentPage, setCurrentPage] = useState<PageName>('login');
   const [liveAudienceLiveID, setLiveAudienceLiveID] = useState<string>('');
+  const [anchorLiveID, setAnchorLiveID] = useState<string>('');
   const [liveEndLiveID, setLiveEndLiveID] = useState<string>('');
 
   // Navigation handlers
@@ -78,6 +79,11 @@ function App() {
 
   const handleBackFromLiveAudience = () => {
     setCurrentPage('liveList');
+  };
+
+  const handleJoinAsAnchor = (liveID: string) => {
+    setAnchorLiveID(liveID);
+    setCurrentPage('anchor');
   };
 
   const handleCreateLive = () => {
@@ -131,6 +137,7 @@ function App() {
           <LiveListPage
             onBack={handleBackToLiveHome}
             onJoinSuccess={handleJumpToLiveAudience}
+            onJoinAsAnchor={handleJoinAsAnchor}
             onCreateLive={handleCreateLive}
           />
         );

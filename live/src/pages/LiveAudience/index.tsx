@@ -140,7 +140,6 @@ export function LiveAudiencePage({ liveID, onBack }: LiveAudiencePageProps) {
     }, []);
 
     const templateLayout = useMemo(() => {
-        console.log('applicants', currentLive);
         return (currentLive as any)?.seatLayoutTemplateID || 600;
     }, [currentLive]);
 
@@ -194,20 +193,34 @@ export function LiveAudiencePage({ liveID, onBack }: LiveAudiencePageProps) {
             const h = String(Math.floor(duration / 3600)).padStart(2, '0');
             const m = String(Math.floor((duration % 3600) / 60)).padStart(2, '0');
             const s = String(duration % 60).padStart(2, '0');
-            setLiveDurationText(`${h}:${m}:${s}`);
+            const newDurationText = `${h}:${m}:${s}`;
+
+            setLiveDurationText(prev => {
+                if (prev !== newDurationText) {
+                    return newDurationText;
+                }
+                return prev;
+            });
         }
     }, [currentLive?.createTime]);
 
     useEffect(() => {
+        if (!currentLive?.createTime) {
+            setLiveDurationText('00:00:00');
+            return;
+        }
+
         updateLiveDurationText();
+
+
         const timer = setInterval(() => {
             updateLiveDurationText();
-        }, 1000);
+        }, 100);
 
         return () => {
             clearInterval(timer);
         };
-    }, [updateLiveDurationText]);
+    }, [currentLive?.createTime, updateLiveDurationText]);
 
     useEffect(() => {
         const handleLiveEnded = () => {

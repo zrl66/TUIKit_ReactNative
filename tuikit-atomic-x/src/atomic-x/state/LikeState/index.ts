@@ -180,8 +180,6 @@ export function useLikeState(liveID: string) {
 
             console.log(`[LikeState] Added listener for: ${eventName}, eventName=${key}`);
         });
-
-        // 清理函数：组件卸载时移除所有监听器
         return () => {
             LIKE_EVENTS.forEach((eventName) => {
                 const keyObject = createListenerKeyObject(eventName);

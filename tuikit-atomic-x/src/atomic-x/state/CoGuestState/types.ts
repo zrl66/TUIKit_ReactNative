@@ -131,4 +131,6 @@ export interface ILiveListener {
   callback: (params?: unknown) => void;
 }
 
-
+export enum CuestErrorCode {
+  NOT_SUPPORT = 100006,
+}

@@ -23,12 +23,14 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { showToast } from './CustomToast';
 import { useLiveListState } from '../atomic-x/state/LiveListState';
+import { useDeviceState } from '../atomic-x/state/DeviceState';
 import type { LiveInfoParam } from '../atomic-x/state/LiveListState/types';
+import { useLoginState } from '../atomic-x/state/LoginState';
 import { DEFAULT_COVER_URL, DEFAULT_AVATAR_URL } from './constants';
 
 interface LiveListProps {
   onJoinSuccess?: (roomId: string) => void;
-  /** 是否处理顶部安全区域（默认 true），如果父组件已处理顶部安全区域，可设置为 false */
+  onJoinAsAnchor?: (roomId: string) => void;
   handleTopSafeArea?: boolean;
 }
 
@@ -124,16 +126,17 @@ const LiveCard: React.FC<{
   );
 };
 
-export function LiveList({ onJoinSuccess, handleTopSafeArea = true }: LiveListProps) {
+export function LiveList({ onJoinSuccess, onJoinAsAnchor, handleTopSafeArea = true }: LiveListProps) {
   const { t } = useTranslation();
   const safeAreaInsets = useSafeAreaInsets();
   const { liveList, liveListCursor, joinLive, fetchLiveList } = useLiveListState();
+  const { loginUserInfo } = useLoginState();
   const [inputLiveId, setInputLiveId] = useState('');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [joiningLiveId, setJoiningLiveId] = useState<string | null>(null);
   const hasInitializedRef = useRef(false);
-
+  const { isFrontCamera, openLocalMicrophone, openLocalCamera } = useDeviceState();
   // 根据输入框的关键字过滤直播列表（前端过滤）
   const filteredLiveList = useMemo(() => {
     const keyword = inputLiveId.trim().toLowerCase();
@@ -184,11 +187,9 @@ export function LiveList({ onJoinSuccess, handleTopSafeArea = true }: LiveListPr
           console.log(`[LiveList] joinLive success, duration: ${duration}ms`);
           onJoinSuccess?.(liveID);
         },
-        onError: (error: Error | string) => {
-          const duration = Date.now() - startTime;
-          const errorMessage = error instanceof Error ? error.message : error;
-          console.error(`[LiveList] joinLive failed after ${duration}ms:`, errorMessage);
-          showToast(`${t('toast.joinRoomFailed')}：${errorMessage || t('common.unknown')}`, 3000);
+        onError: () => {
+          showToast(`${t('audience.liveEnded')}`, 3000);
+          fetchLiveList({ cursor: '', count: 20 });
         },
       });
     } catch (error: any) {
@@ -205,17 +206,44 @@ export function LiveList({ onJoinSuccess, handleTopSafeArea = true }: LiveListPr
 
   // 点击卡片进入直播间
   const handleJoinLive = async (live: LiveInfoParam) => {
+
+    const liveOwner = (live as any)?.liveOwner;
+    const ownerUserID = liveOwner?.userID;
+    const currentUserID = loginUserInfo?.userID;
+
+    if (ownerUserID && currentUserID && ownerUserID === currentUserID) {
+      setJoiningLiveId(live.liveID);
+
+      try {
+        await joinLive({
+          liveID: live.liveID,
+          onSuccess: async () => {
+            await openLocalCamera({ isFront: isFrontCamera })
+            await openLocalMicrophone()
+            onJoinAsAnchor?.(live.liveID);
+            setJoiningLiveId(null);
+          },
+          onError: (error: Error | string) => {
+            const errorMessage = error instanceof Error ? error.message : error;
+            console.error('[LiveList] Anchor join failed:', errorMessage);
+            showToast(`${t('toast.joinRoomFailed')}：${errorMessage || t('common.unknown')}`, 3000);
+            setJoiningLiveId(null);
+          },
+        });
+      } catch (error: any) {
+        console.error('[LiveList] Anchor join exception:', error);
+        showToast(`${t('toast.joinRoomFailed')}：${error?.message || t('common.unknown')}`, 3000);
+        setJoiningLiveId(null);
+      }
+      return;
+    }
+
     await handleJoinLiveById(live.liveID);
   };
 
   // 通过输入框快速进入
-  const handleInputSubmit = async () => {
-    const trimmedLiveID = inputLiveId.trim();
-    if (!trimmedLiveID) {
-      showToast(t('liveList.enterLiveId'), 2000);
-      return;
-    }
-    await handleJoinLiveById(trimmedLiveID);
+  const handleInputSubmit = () => {
+    showToast(t('common.SearchCompleted'), 2000);
   };
 
   // 下拉刷新

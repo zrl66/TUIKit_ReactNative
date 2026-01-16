@@ -5,7 +5,8 @@
     "complete": "Done",
     "unknown": "Unknown",
     "me": "Me",
-    "anchor": "Anchor"
+    "anchor": "Anchor",
+    "SearchCompleted": "Search Completed"
   },
   "keepAlive": {
     "title": "Audio Service",
@@ -54,7 +55,8 @@
     "applyAudio": "Apply for Audio",
     "disconnectCoGuest": "Disconnect",
     "disconnect": "Disconnect",
-    "disconnectConfirm": "Are you sure to disconnect?"
+    "disconnectConfirm": "Are you sure to disconnect?",
+    "notSupportCoGuest": "You are currently unable to perform this action (possibly due to lack of permissions or scenario restrictions)."
   },
   "coHost": {
     "hostBusy": "Host is busy, try later",
