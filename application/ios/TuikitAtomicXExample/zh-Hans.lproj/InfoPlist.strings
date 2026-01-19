@@ -1,0 +1,7 @@
+"CFBundleDisplayName" = "APP-UIKit";
+
+"NSCameraUsageDescription" = "需要访问摄像头以进行直播";
+
+"NSMicrophoneUsageDescription" = "需要访问麦克风以进行直播";
+
+"NSPhotoLibraryUsageDescription" = "需要访问相册以选择直播封面";
