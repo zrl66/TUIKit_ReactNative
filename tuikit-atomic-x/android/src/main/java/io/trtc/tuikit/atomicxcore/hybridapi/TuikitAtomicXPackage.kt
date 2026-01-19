@@ -35,26 +35,26 @@ class TuikitAtomicXPackage : BaseReactPackage() {
       moduleInfos[TuikitAtomicXModule.NAME] = ReactModuleInfo(
         TuikitAtomicXModule.NAME,
         TuikitAtomicXModule.NAME,
-        false,  // canOverrideExistingModule
-        false,  // needsEagerInit
-        false,  // isCxxModule
-        true // isTurboModule
+        false,
+        false,
+        false,
+        true
       )
       moduleInfos[HybridBridgeProxyModule.NAME] = ReactModuleInfo(
         HybridBridgeProxyModule.NAME,
         HybridBridgeProxyModule.NAME,
-        false,  // canOverrideExistingModule
-        false,  // needsEagerInit
-        false,  // isCxxModule
-        false // isTurboModule (HybridBridgeProxy is not a TurboModule)
+        false,
+        false,
+        false,
+        false
       )
       moduleInfos[ForegroundServiceModule.NAME] = ReactModuleInfo(
         ForegroundServiceModule.NAME,
         ForegroundServiceModule.NAME,
-        false,  // canOverrideExistingModule
-        false,  // needsEagerInit
-        false,  // isCxxModule
-        false // isTurboModule (ForegroundServiceModule is not a TurboModule)
+        false,
+        false,
+        false,
+        false
       )
       moduleInfos
     }

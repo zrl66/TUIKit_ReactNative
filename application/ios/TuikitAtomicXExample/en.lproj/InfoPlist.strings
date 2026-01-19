@@ -1,0 +1,7 @@
+"CFBundleDisplayName" = "APP-UIKit";
+
+"NSCameraUsageDescription" = "Need camera access for live streaming";
+
+"NSMicrophoneUsageDescription" = "Need microphone access for live streaming";
+
+"NSPhotoLibraryUsageDescription" = "Need photo library access to select live cover image";
